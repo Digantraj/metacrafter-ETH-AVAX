@@ -1,83 +1,86 @@
-# FriendlyEscrow Smart Contract
+# EduSystem Smart Contract
 
-This project demonstrates a simple smart contract implementation called **FriendlyEscrow** using Solidity. The contract is designed to handle escrow payments between two parties, the payer and the payee. It utilizes Solidity's `require()`, `assert()`, and `revert()` statements to ensure proper execution flow and error handling.
+## Overview
+
+The `EduSystem` smart contract is a Solidity-based contract designed for managing learners and academic programs in a decentralized system. It allows an admin to register learners, create programs, enroll learners in programs, and assign scores. Learners can check their registration status, program enrollment status, and their scores.
 
 ## Features
 
-- **Deposit Funds:** The payer can deposit a specific amount of Ether into the contract.
-- **Release Payment:** The payer can release the locked funds to the payee once certain conditions are met.
-- **Abort Escrow:** The payer can cancel the escrow under specific conditions.
+- **Admin Functions:**
+  - Register new learners.
+  - Create new academic programs.
+  - Assign scores to learners for specific programs.
+  - Prevent unauthorized access with a revert mechanism.
 
-## Prerequisites
+- **Learner Functions:**
+  - Enroll in academic programs.
+  - Check registration status.
+  - Check enrollment status.
+  - Retrieve scores for enrolled programs.
 
-- **Solidity Version:** This contract requires a Solidity compiler version greater than or equal to 0.8.17 and less than 0.9.0.
+## Contract Functions
 
-## Contract Overview
+### Admin Functions
 
-### Variables
+1. **`addLearner(address _learnerAddress, uint256 _id, string memory _fullName)`**
+   - Registers a new learner with the specified address, ID, and name.
 
-- `payer`: The address of the payer.
-- `payee`: The address of the payee.
-- `lockedAmount`: The amount of Ether locked in the escrow.
-- `paymentCompleted`: A boolean indicating whether the payment has been completed.
+2. **`createProgram(uint256 _id, string memory _title)`**
+   - Creates a new academic program with the specified ID and title.
 
-### Events
+3. **`setScore(address _learnerAddress, uint256 _programId, uint8 _score)`**
+   - Assigns a score to a learner for a specific program. Only the admin can call this function.
 
-- `EscrowSetup(address indexed payer, address indexed payee, uint256 amount)`: Emitted when the escrow is set up.
-- `FundsTransferred(address indexed to, uint256 amount)`: Emitted when funds are transferred to the payee.
-- `EscrowAborted(string message)`: Emitted when the escrow is aborted.
+4. **`preventUnauthorized()`**
+   - Demonstrates the use of the `revert` function to prevent unauthorized access.
 
-### Functions
+### Learner Functions
 
-- **`constructor(address _payer, address _payee)`**: Initializes the contract with the payer and payee addresses.
+1. **`enroll(uint256 _programId)`**
+   - Enrolls the caller in the specified academic program.
 
-- **`depositFunds() external payable`**: Allows the payer to deposit funds into the contract. Uses `require()` to ensure that only the payer can deposit and that the deposit amount is greater than zero.
+2. **`checkRegistration(address _learnerAddress)`**
+   - Returns whether the specified address is registered as a learner.
 
-- **`releasePayment() external payable`**: Releases the locked funds to the payee. Uses `require()` to ensure only the payer can authorize the release, that the payment has not already been completed, and that the contract has enough balance. Uses `assert()` to confirm the contract's balance matches the locked amount before proceeding.
+3. **`checkEnrollment(address _learnerAddress, uint256 _programId)`**
+   - Returns whether the specified learner is enrolled in the given program.
 
-- **`abortEscrow() external view`**: Allows the payer to abort the escrow. Uses `require()` to ensure only the payer can abort and that the payment has not been completed. Uses `revert()` to cancel the transaction and provide a message.
+4. **`getScore(address _learnerAddress, uint256 _programId)`**
+   - Returns the score of the specified learner for the given program.
 
-## Example Usage
+## Deployment Using Remix IDE
 
-```solidity
-// Deploying the contract
-FriendlyEscrow escrow = new FriendlyEscrow(payerAddress, payeeAddress);
+1. **Open Remix IDE:**
+   - Navigate to [Remix IDE](https://remix.ethereum.org/).
 
-// Payer deposits funds
-escrow.depositFunds{value: amountInWei}();
+2. **Load the Contract:**
+   - Create a new file in the Remix IDE and paste the Solidity code for `EduSystem`.
 
-// Releasing payment to payee
-escrow.releasePayment();
+3. **Compile the Contract:**
+   - Select the "Solidity Compiler" tab on the left sidebar.
+   - Ensure the correct Solidity version (0.8.x) is selected.
+   - Click the "Compile EduSystem.sol" button.
 
-// Aborting the escrow (if necessary)
-escrow.abortEscrow();
-```
+4. **Deploy the Contract:**
+   - Switch to the "Deploy & Run Transactions" tab.
+   - Ensure "JavaScript VM" is selected as the environment for testing or connect to an appropriate network (e.g., Injected Web3 with MetaMask).
+   - Click the "Deploy" button to deploy the contract.
 
-## Error Handling
+5. **Interact with the Contract:**
+   - Once deployed, the contract instance will appear in the "Deployed Contracts" section.
+   - Use the contract's functions through the Remix interface to interact with it.
 
-The smart contract implements three types of error handling mechanisms:
+## Testing
 
-1. **`require()`**: 
-   - Used to validate conditions before execution. 
-   - If the condition fails, the transaction is reverted with an optional error message. 
-   - Commonly used to check inputs, state variables, and return values from external function calls.
+- **Manual Testing:**
+  - Use Remix's UI to test each function. Check that you can perform operations as expected and that events are emitted correctly.
 
-2. **`assert()`**: 
-   - Used to check for conditions that should never fail. 
-   - If the condition fails, it indicates a bug in the code, and the transaction is reverted, consuming all remaining gas.
-   - Primarily used to check for internal errors and invariants.
+## License
 
-3. **`revert()`**: 
-   - Explicitly reverts the transaction and provides a custom error message. 
-   - Can be used to undo all state changes made during the transaction up to the point of failure.
-   - It is useful when complex conditions need to be validated, or multiple require checks need to be consolidated into a single error state.
+This project is licensed under the MIT License.
 
 ## Authors
 
 - **Digant Raj**  
   GitHub: [@Digant](https://github.com/Digantraj)
-
-## License
-
-This project is licensed under the MIT License.
 
