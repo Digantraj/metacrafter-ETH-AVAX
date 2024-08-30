@@ -1,49 +1,92 @@
 // SPDX-License-Identifier: MIT
-// Compiler version must be greater than or equal to 0.8.17 and less than 0.9.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.0;
 
-contract FriendlyEscrow {
-    address public payer;
-    address public payee;
-    uint256 public lockedAmount;    //STORE AMOUNT OF ETHER THAT IS LOKED IN ESCROW
-    bool public paymentCompleted;
+contract EduSystem {
 
-    event EscrowSetup(address indexed payer, address indexed payee, uint256 amount);
-    event FundsTransferred(address indexed to, uint256 amount);
-    event EscrowAborted(string message);
-
-    // INITIALIZE THE CONTRACT
-    constructor(address _payer, address _payee) {
-        payer = _payer;
-        payee = _payee;
-        paymentCompleted = false;
+    struct Learner {
+        uint256 id;
+        string fullName;
+        bool isRegistered;
     }
 
-    function depositFunds() external payable {
-        require(msg.sender == payer, "Only the payer can deposit funds.");
-        require(msg.value > 0, "Please deposit a non-zero amount.");
-    
-        lockedAmount = msg.value;          //AMOUNT OF ETHER SEND IN TRANSACTION 
-        emit EscrowSetup(payer, payee, lockedAmount);
+    struct AcademicProgram {
+        uint256 id;
+        string title;
+        bool available;
     }
 
-    // Function to release funds 
-    function releasePayment() external payable  {
-        require(msg.sender == payer, "Only the payer can authorize the release of funds.");
-        require(!paymentCompleted, "The funds have already been released.");
-        require(address(this).balance >= lockedAmount, "Contract does not have enough balance to cover the payment.");
+    mapping(address => Learner) private learnerRecords;
+    mapping(uint256 => AcademicProgram) private programRecords;
 
-        assert(address(this).balance == lockedAmount);
+    mapping(address => mapping(uint256 => bool)) private enrollments;
+    mapping(address => mapping(uint256 => uint8)) private scores;
 
-        paymentCompleted = true;
-        payable(payee).transfer(lockedAmount);
-        emit FundsTransferred(payee, lockedAmount);
+    address private admin;
+
+    event LearnerRegistered(address indexed learnerAddress, uint256 id, string fullName);
+    event ProgramCreated(uint256 id, string title);
+    event LearnerEnrolled(address indexed learnerAddress, uint256 programId);
+    event ScoreAssigned(address indexed learnerAddress, uint256 programId, uint8 score);
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Only the admin can perform this action");
+        _;
     }
 
-    function abortEscrow() external view {
-        require(msg.sender == payer, "Only the payer can cancel the escrow.");
-        require(!paymentCompleted, "Cannot cancel the escrow after the payment has been released.");
+    constructor() {
+        admin = msg.sender;
+    }
 
-        revert("Escrow has been canceled by the payer. All funds will remain in the contract.");
+    function addLearner(address _learnerAddress, uint256 _id, string memory _fullName) public onlyAdmin {
+        require(!learnerRecords[_learnerAddress].isRegistered, "Learner is already registered");
+
+        learnerRecords[_learnerAddress] = Learner(_id, _fullName, true);
+
+        emit LearnerRegistered(_learnerAddress, _id, _fullName);
+    }
+
+    function createProgram(uint256 _id, string memory _title) public onlyAdmin {
+        require(!programRecords[_id].available, "Program already exists");
+
+        programRecords[_id] = AcademicProgram(_id, _title, true);
+
+        emit ProgramCreated(_id, _title);
+    }
+
+    function enroll(uint256 _programId) public {
+        require(learnerRecords[msg.sender].isRegistered, "Learner is not registered");
+        require(programRecords[_programId].available, "Program does not exist");
+        require(!enrollments[msg.sender][_programId], "Learner is already enrolled in this program");
+
+        enrollments[msg.sender][_programId] = true;
+
+        emit LearnerEnrolled(msg.sender, _programId);
+    }
+
+    function setScore(address _learnerAddress, uint256 _programId, uint8 _score) public onlyAdmin {
+        require(enrollments[_learnerAddress][_programId], "Learner is not enrolled with this program");
+        require(_score <= 100, "Score must be between 0 and 100");
+
+        scores[_learnerAddress][_programId] = _score;
+
+        assert(scores[_learnerAddress][_programId] == _score);
+
+        emit ScoreAssigned(_learnerAddress, _programId, _score);
+    }
+
+    function preventUnauthorized() public view {
+        if (msg.sender != admin) {
+            revert("Access denied: Admins only");
+        }
+    }
+    function checkRegistration(address _learnerAddress) public view returns (bool) {
+        return learnerRecords[_learnerAddress].isRegistered;
+    }
+    function checkEnrollment(address _learnerAddress, uint256 _programId) public view returns (bool) {
+        return enrollments[_learnerAddress][_programId];
+    }
+    function getScore(address _learnerAddress, uint256 _programId) public view returns (uint8) {
+        require(enrollments[_learnerAddress][_programId], "Learner is not enrolled with this program");
+        return scores[_learnerAddress][_programId];
     }
 }
